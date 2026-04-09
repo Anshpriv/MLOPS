@@ -49,6 +49,46 @@ def verify_password(
         )
     return True
 
+
+def run_prediction(features: List[float]):
+    if model is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Model is not loaded. Please contact the administrator."
+        )
+
+    if not features:
+        raise HTTPException(
+            status_code=422,
+            detail="Feature list cannot be empty."
+        )
+
+    try:
+        prediction = model.predict([features])
+        return {
+            "success": True,
+            "prediction": prediction.tolist()
+        }
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid input values: {str(e)}"
+        )
+
+    except TypeError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Type error during prediction: {str(e)}"
+        )
+
+    except Exception as e:
+        logging.error(f"Prediction error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during prediction."
+        )
+
 # --------------------------------------------------
 # Startup Event – Load Model
 # --------------------------------------------------
@@ -125,44 +165,12 @@ def predict(
     request: PredictionRequest,
     auth: bool = Depends(verify_password)
 ):
-    if model is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Model is not loaded. Please contact the administrator."
-        )
+    return run_prediction(request.features)
 
-    if not request.features:
-        raise HTTPException(
-            status_code=422,
-            detail="Feature list cannot be empty."
-        )
 
-    try:
-        prediction = model.predict([request.features])
-
-        return {
-            "success": True,
-            "prediction": prediction.tolist()
-        }
-
-    except ValueError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid input values: {str(e)}"
-        )
-
-    except TypeError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Type error during prediction: {str(e)}"
-        )
-
-    except Exception as e:
-        logging.error(f"Prediction error: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error during prediction."
-        )
+@app.post("/predict-ui")
+def predict_ui(request: PredictionRequest):
+    return run_prediction(request.features)
 
 
 # --------------------------------------------------

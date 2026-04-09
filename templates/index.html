@@ -3,19 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iris Classifier</title>
+  <title>Iris Bloom Classifier</title>
   <style>
     :root {
-      --bg: #f4efe6;
-      --bg-accent: #d9e8d7;
-      --card: rgba(255, 252, 246, 0.88);
-      --text: #1f2a1f;
-      --muted: #5f6f61;
-      --primary: #2f6b4f;
-      --primary-dark: #214c38;
-      --border: rgba(47, 107, 79, 0.15);
-      --shadow: 0 24px 70px rgba(45, 65, 49, 0.14);
-      --error: #9d3d3d;
+      --sand: #f5efe5;
+      --mist: #e3efe3;
+      --leaf: #2d6a4f;
+      --leaf-deep: #1f4d39;
+      --rose: #d98a7c;
+      --sun: #f0c979;
+      --card: rgba(255, 252, 246, 0.9);
+      --text: #1e2a24;
+      --muted: #64746a;
+      --line: rgba(45, 106, 79, 0.14);
+      --shadow: 0 30px 80px rgba(37, 53, 44, 0.14);
+      --error: #b24a4a;
     }
 
     * {
@@ -28,77 +30,95 @@
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 35%),
-        radial-gradient(circle at bottom right, rgba(217, 232, 215, 0.9), transparent 30%),
-        linear-gradient(135deg, var(--bg) 0%, #f8f5ef 48%, var(--bg-accent) 100%);
-      display: grid;
-      place-items: center;
+        radial-gradient(circle at top left, rgba(255,255,255,0.92), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(217,138,124,0.18), transparent 28%),
+        linear-gradient(135deg, var(--sand) 0%, #faf7f2 45%, var(--mist) 100%);
       padding: 24px;
     }
 
-    .shell {
-      width: min(1080px, 100%);
+    .page {
+      width: min(1160px, 100%);
+      margin: 0 auto;
       display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
+      grid-template-columns: 1.1fr 0.9fr;
       gap: 24px;
       align-items: stretch;
     }
 
     .panel {
       background: var(--card);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border);
-      border-radius: 28px;
+      border: 1px solid var(--line);
+      border-radius: 30px;
       box-shadow: var(--shadow);
       overflow: hidden;
+      backdrop-filter: blur(10px);
     }
 
     .hero {
-      padding: 42px;
       position: relative;
+      padding: 42px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      min-height: 680px;
     }
 
+    .hero::before,
     .hero::after {
       content: "";
       position: absolute;
-      inset: auto -80px -100px auto;
-      width: 240px;
-      height: 240px;
-      background: radial-gradient(circle, rgba(47, 107, 79, 0.18), transparent 70%);
-      border-radius: 50%;
+      border-radius: 999px;
+      pointer-events: none;
     }
 
-    .eyebrow {
+    .hero::before {
+      top: -70px;
+      right: -40px;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(240, 201, 121, 0.35), transparent 70%);
+    }
+
+    .hero::after {
+      bottom: -90px;
+      left: -30px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(45, 106, 79, 0.18), transparent 72%);
+    }
+
+    .badge {
       display: inline-flex;
-      padding: 8px 14px;
-      border-radius: 999px;
-      background: rgba(47, 107, 79, 0.08);
-      color: var(--primary-dark);
-      font-size: 0.84rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      align-items: center;
+      gap: 8px;
       width: fit-content;
+      padding: 9px 16px;
+      border-radius: 999px;
+      background: rgba(45, 106, 79, 0.08);
+      color: var(--leaf-deep);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
     h1 {
-      margin: 18px 0 14px;
-      font-size: clamp(2.2rem, 4vw, 4rem);
-      line-height: 0.98;
-      letter-spacing: -0.04em;
+      margin: 18px 0 16px;
+      max-width: 10ch;
+      font-size: clamp(2.8rem, 5vw, 5rem);
+      line-height: 0.96;
+      letter-spacing: -0.05em;
     }
 
     .lead {
-      margin: 0;
       max-width: 34rem;
+      margin: 0;
       color: var(--muted);
-      font-size: 1rem;
-      line-height: 1.7;
+      font-size: 1.02rem;
+      line-height: 1.8;
     }
 
-    .species-grid {
+    .stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 14px;
@@ -107,81 +127,78 @@
       z-index: 1;
     }
 
-    .species-card {
+    .stat {
       padding: 18px;
       border-radius: 22px;
-      min-height: 140px;
+      border: 1px solid rgba(0,0,0,0.04);
     }
 
-    .species-card h2 {
-      margin: 0 0 8px;
+    .stat strong {
+      display: block;
+      margin-bottom: 8px;
       font-size: 1rem;
     }
 
-    .species-card p {
-      margin: 0;
-      color: rgba(31, 42, 31, 0.78);
-      font-size: 0.92rem;
+    .stat span {
+      color: rgba(30, 42, 36, 0.76);
       line-height: 1.5;
+      font-size: 0.92rem;
     }
 
-    .species-card.setosa { background: linear-gradient(180deg, rgba(168, 213, 162, 0.92), rgba(168, 213, 162, 0.58)); }
-    .species-card.versicolor { background: linear-gradient(180deg, rgba(240, 207, 133, 0.92), rgba(240, 207, 133, 0.58)); }
-    .species-card.virginica { background: linear-gradient(180deg, rgba(241, 167, 161, 0.92), rgba(241, 167, 161, 0.58)); }
+    .setosa { background: linear-gradient(180deg, rgba(165, 214, 167, 0.84), rgba(165, 214, 167, 0.46)); }
+    .versicolor { background: linear-gradient(180deg, rgba(240, 201, 121, 0.84), rgba(240, 201, 121, 0.46)); }
+    .virginica { background: linear-gradient(180deg, rgba(217, 138, 124, 0.82), rgba(217, 138, 124, 0.42)); }
 
-    .form-panel {
-      padding: 32px;
+    .examples {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .pill {
+      border: 0;
+      padding: 11px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.76);
+      color: var(--leaf-deep);
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(31, 77, 57, 0.08);
+    }
+
+    .predictor {
+      padding: 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .eyebrow {
+      color: var(--leaf);
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .title {
+      margin: 10px 0 8px;
+      font-size: 1.75rem;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 0 0 22px;
+      color: var(--muted);
+      line-height: 1.7;
     }
 
     form {
       display: grid;
-      gap: 18px;
-    }
-
-    .section-title {
-      margin: 0;
-      font-size: 1.35rem;
-      letter-spacing: -0.03em;
-    }
-
-    .section-copy {
-      margin: 6px 0 18px;
-      color: var(--muted);
-      line-height: 1.6;
-      font-size: 0.95rem;
-    }
-
-    .field {
-      display: grid;
-      gap: 8px;
-    }
-
-    label {
-      font-size: 0.94rem;
-      font-weight: 600;
-    }
-
-    .hint {
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
-
-    input {
-      width: 100%;
-      border: 1px solid rgba(47, 107, 79, 0.18);
-      border-radius: 16px;
-      padding: 14px 16px;
-      font-size: 1rem;
-      color: var(--text);
-      background: rgba(255, 255, 255, 0.82);
-      outline: none;
-      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-    }
-
-    input:focus {
-      border-color: rgba(47, 107, 79, 0.42);
-      box-shadow: 0 0 0 5px rgba(47, 107, 79, 0.10);
-      transform: translateY(-1px);
+      gap: 16px;
     }
 
     .grid {
@@ -190,171 +207,205 @@
       gap: 14px;
     }
 
-    button {
-      border: 0;
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.94rem;
+    }
+
+    small {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid rgba(45, 106, 79, 0.18);
       border-radius: 18px;
-      padding: 15px 18px;
-      background: linear-gradient(135deg, var(--primary) 0%, #3c7f5d 100%);
+      padding: 14px 16px;
+      font-size: 1rem;
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--text);
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    input:focus {
+      border-color: rgba(45, 106, 79, 0.42);
+      box-shadow: 0 0 0 5px rgba(45, 106, 79, 0.09);
+      transform: translateY(-1px);
+    }
+
+    .submit {
+      margin-top: 6px;
+      border: 0;
+      border-radius: 20px;
+      padding: 16px 18px;
+      background: linear-gradient(135deg, var(--leaf) 0%, #3d8161 100%);
       color: white;
       font-size: 1rem;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
-      transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
-      box-shadow: 0 16px 30px rgba(47, 107, 79, 0.24);
+      box-shadow: 0 18px 34px rgba(45, 106, 79, 0.24);
+      transition: transform 180ms ease, filter 180ms ease;
     }
 
-    button:hover {
+    .submit:hover {
       transform: translateY(-2px);
-      filter: saturate(1.05);
-    }
-
-    button:active {
-      transform: translateY(0);
+      filter: saturate(1.04);
     }
 
     .result {
-      margin-top: 18px;
-      padding: 18px;
-      border-radius: 20px;
-      background: rgba(47, 107, 79, 0.07);
-      border: 1px solid rgba(47, 107, 79, 0.10);
-      min-height: 104px;
+      margin-top: 22px;
+      padding: 22px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(45, 106, 79, 0.08), rgba(45, 106, 79, 0.03));
+      border: 1px solid rgba(45, 106, 79, 0.12);
+      min-height: 158px;
       display: grid;
-      align-content: center;
       gap: 8px;
+      align-content: center;
     }
 
     .result-label {
       font-size: 0.8rem;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--muted);
     }
 
     .result-value {
-      font-size: 1.6rem;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
       font-weight: 800;
-      letter-spacing: -0.04em;
+      letter-spacing: -0.05em;
     }
 
     .result-copy {
       color: var(--muted);
-      line-height: 1.5;
-      font-size: 0.95rem;
+      line-height: 1.6;
     }
 
     .error {
       color: var(--error);
     }
 
-    .footer-note {
+    .note {
       margin-top: 16px;
       color: var(--muted);
-      font-size: 0.84rem;
+      font-size: 0.88rem;
       line-height: 1.6;
     }
 
-    @media (max-width: 920px) {
-      .shell {
+    @media (max-width: 960px) {
+      .page {
         grid-template-columns: 1fr;
       }
 
       .hero,
-      .form-panel {
+      .predictor {
+        min-height: auto;
         padding: 28px;
       }
     }
 
     @media (max-width: 640px) {
+      body {
+        padding: 14px;
+      }
+
       .grid,
-      .species-grid {
+      .stats {
         grid-template-columns: 1fr;
       }
 
-      body {
-        padding: 14px;
+      h1 {
+        max-width: none;
       }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
+  <main class="page">
     <section class="panel hero">
       <div>
-        <span class="eyebrow">Iris Dataset Demo</span>
-        <h1>Predict flower species from four simple measurements.</h1>
+        <span class="badge">Iris ML Predictor</span>
+        <h1>See which iris species the model picks.</h1>
         <p class="lead">
-          Enter sepal and petal values in centimeters and the model will classify the iris as Setosa, Versicolor, or Virginica.
+          This demo uses the classic iris dataset and predicts flower species from four measurements. No password is needed in the page now. Just enter the values and get the result instantly.
         </p>
       </div>
 
-      <div class="species-grid">
-        <article class="species-card setosa">
-          <h2>Setosa</h2>
-          <p>Usually smaller petals and a very distinct shape that makes it easier to separate.</p>
-        </article>
-        <article class="species-card versicolor">
-          <h2>Versicolor</h2>
-          <p>A balanced middle group with moderate petal and sepal measurements.</p>
-        </article>
-        <article class="species-card virginica">
-          <h2>Virginica</h2>
-          <p>Often the largest petals, with measurements that trend higher overall.</p>
-        </article>
+      <div>
+        <div class="stats">
+          <article class="stat setosa">
+            <strong>Setosa</strong>
+            <span>Small petals, very distinctive structure, usually the easiest class to separate.</span>
+          </article>
+          <article class="stat versicolor">
+            <strong>Versicolor</strong>
+            <span>Middle-range petal sizes with balanced measurements across all four inputs.</span>
+          </article>
+          <article class="stat virginica">
+            <strong>Virginica</strong>
+            <span>Larger petals and stronger overall dimensions compared with the other species.</span>
+          </article>
+        </div>
+
+        <div class="examples">
+          <button class="pill" type="button" data-values="5.1,3.5,1.4,0.2">Use Setosa sample</button>
+          <button class="pill" type="button" data-values="6.0,2.9,4.5,1.5">Use Versicolor sample</button>
+          <button class="pill" type="button" data-values="6.9,3.1,5.4,2.1">Use Virginica sample</button>
+        </div>
       </div>
     </section>
 
-    <section class="panel form-panel">
-      <h2 class="section-title">Try a prediction</h2>
-      <p class="section-copy">
-        Enter the API key and iris measurements below. The page sends them directly to the FastAPI backend.
-      </p>
+    <section class="panel predictor">
+      <div class="eyebrow">Simple Form</div>
+      <h2 class="title">Run a prediction</h2>
+      <p class="subtitle">Fill in the flower measurements in centimeters. The frontend is connected directly to the backend through the browser-friendly prediction route.</p>
 
       <form id="predict-form">
-        <div class="field">
-          <label for="password">API key</label>
-          <input id="password" name="password" type="password" value="Ansh" required>
-          <span class="hint">This is sent as the x-api-key header when you submit the form.</span>
-        </div>
-
         <div class="grid">
           <div class="field">
             <label for="sepal_length">Sepal length</label>
-            <input id="sepal_length" name="sepal_length" type="number" min="0" step="0.1" value="5.1" required>
-            <span class="hint">Example: 5.1 cm</span>
+            <input id="sepal_length" type="number" min="0" step="0.1" value="5.1" required>
+            <small>Example: 5.1 cm</small>
           </div>
 
           <div class="field">
             <label for="sepal_width">Sepal width</label>
-            <input id="sepal_width" name="sepal_width" type="number" min="0" step="0.1" value="3.5" required>
-            <span class="hint">Example: 3.5 cm</span>
+            <input id="sepal_width" type="number" min="0" step="0.1" value="3.5" required>
+            <small>Example: 3.5 cm</small>
           </div>
 
           <div class="field">
             <label for="petal_length">Petal length</label>
-            <input id="petal_length" name="petal_length" type="number" min="0" step="0.1" value="1.4" required>
-            <span class="hint">Example: 1.4 cm</span>
+            <input id="petal_length" type="number" min="0" step="0.1" value="1.4" required>
+            <small>Example: 1.4 cm</small>
           </div>
 
           <div class="field">
             <label for="petal_width">Petal width</label>
-            <input id="petal_width" name="petal_width" type="number" min="0" step="0.1" value="0.2" required>
-            <span class="hint">Example: 0.2 cm</span>
+            <input id="petal_width" type="number" min="0" step="0.1" value="0.2" required>
+            <small>Example: 0.2 cm</small>
           </div>
         </div>
 
-        <button type="submit">Predict Species</button>
+        <button class="submit" type="submit">Predict Species</button>
       </form>
 
       <section class="result" id="result">
         <div class="result-label">Prediction</div>
-        <div class="result-value">Waiting for input</div>
-        <div class="result-copy">Fill the form and submit to see the model output.</div>
+        <div class="result-value">Waiting for your input</div>
+        <div class="result-copy">Choose sample values or enter your own measurements to classify the flower.</div>
       </section>
 
-      <p class="footer-note">
-        Sample inputs: Setosa 5.1, 3.5, 1.4, 0.2 | Versicolor 6.0, 2.9, 4.5, 1.5 | Virginica 6.9, 3.1, 5.4, 2.1
-      </p>
+      <p class="note">If the page ever shows <code>{"detail":"Not Found"}</code>, the server you are running does not include the new <code>/</code> route yet. Restart the app after saving the latest code.</p>
     </section>
   </main>
 
@@ -363,6 +414,14 @@
     const result = document.getElementById("result");
     const resultValue = result.querySelector(".result-value");
     const resultCopy = result.querySelector(".result-copy");
+    const exampleButtons = document.querySelectorAll(".pill");
+
+    const fields = {
+      sepalLength: document.getElementById("sepal_length"),
+      sepalWidth: document.getElementById("sepal_width"),
+      petalLength: document.getElementById("petal_length"),
+      petalWidth: document.getElementById("petal_width")
+    };
 
     const speciesMap = {
       0: "Setosa",
@@ -377,25 +436,33 @@
       resultCopy.classList.toggle("error", isError);
     }
 
+    exampleButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const [sl, sw, pl, pw] = button.dataset.values.split(",");
+        fields.sepalLength.value = sl;
+        fields.sepalWidth.value = sw;
+        fields.petalLength.value = pl;
+        fields.petalWidth.value = pw;
+      });
+    });
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      const password = document.getElementById("password").value.trim();
       const features = [
-        Number(document.getElementById("sepal_length").value),
-        Number(document.getElementById("sepal_width").value),
-        Number(document.getElementById("petal_length").value),
-        Number(document.getElementById("petal_width").value)
+        Number(fields.sepalLength.value),
+        Number(fields.sepalWidth.value),
+        Number(fields.petalLength.value),
+        Number(fields.petalWidth.value)
       ];
 
-      setResult("Predicting...", "Running the iris model with your input values.");
+      setResult("Predicting...", "Sending your four iris measurements to the backend.");
 
       try {
-        const response = await fetch("/predict", {
+        const response = await fetch("/predict-ui", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            "x-api-key": password
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({ features })
         });
@@ -409,7 +476,7 @@
         const rawPrediction = Array.isArray(data.prediction) ? data.prediction[0] : data.prediction;
         const prediction = speciesMap[rawPrediction] || String(rawPrediction);
 
-        setResult(prediction, "The model classified this flower using the four iris measurements you entered.");
+        setResult(prediction, "The backend successfully classified this iris from the values in the form.");
       } catch (error) {
         setResult("Request failed", error.message, true);
       }
@@ -417,4 +484,3 @@
   </script>
 </body>
 </html>
-
