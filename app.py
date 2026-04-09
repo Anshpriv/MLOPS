@@ -1,7 +1,10 @@
 import pickle
 import logging
 import uvicorn
+import os
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
@@ -17,24 +20,32 @@ logging.basicConfig(
 # FastAPI App Initialization
 # --------------------------------------------------
 app = FastAPI(
-    title="Model Prediction API",
-    description="API for ML model prediction with simple HTTP auth",
-    version="1.1.0"
+    title="Iris Prediction API",
+    description="API and frontend for iris flower species prediction",
+    version="1.2.0"
 )
 
 # --------------------------------------------------
 # Global Model Variable
 # --------------------------------------------------
 model = None
+BASE_DIR = Path(__file__).resolve().parent
+INDEX_FILE = BASE_DIR / "templates" / "index.html"
+DEFAULT_API_KEY = os.getenv("API_KEY", "Ansh")
 
 # --------------------------------------------------
 # Simple Header Authentication Dependency
 # --------------------------------------------------
-def verify_password(password: Optional[str] = Header(None)):
-    if password != "Ansh":
+def verify_password(
+    x_api_key: Optional[str] = Header(None),
+    password: Optional[str] = Header(None)
+):
+    provided_key = x_api_key or password
+
+    if provided_key != DEFAULT_API_KEY:
         raise HTTPException(
             status_code=401,
-            detail="Unauthorized: Invalid or missing password header"
+            detail="Unauthorized: Invalid or missing API key header"
         )
     return True
 
@@ -76,8 +87,33 @@ def load_model():
 class PredictionRequest(BaseModel):
     features: List[float] = Field(
         ...,
-        min_items=1,
-        description="List of numerical features for prediction"
+        min_items=4,
+        max_items=4,
+        description="List of four iris flower measurements"
+    )
+
+
+# --------------------------------------------------
+# Frontend Route
+# --------------------------------------------------
+@app.get("/", response_class=HTMLResponse)
+def home():
+    try:
+        return HTMLResponse(INDEX_FILE.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Frontend file not found.")
+
+
+# --------------------------------------------------
+# Health Endpoint
+# --------------------------------------------------
+@app.get("/health")
+def health():
+    return JSONResponse(
+        {
+            "status": "ok",
+            "model_loaded": model is not None
+        }
     )
 
 
@@ -87,7 +123,7 @@ class PredictionRequest(BaseModel):
 @app.post("/predict")
 def predict(
     request: PredictionRequest,
-    auth: bool = Depends(verify_password)  # 🔐 Auth applied here
+    auth: bool = Depends(verify_password)
 ):
     if model is None:
         raise HTTPException(
