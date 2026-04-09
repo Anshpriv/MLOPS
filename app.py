@@ -2,6 +2,7 @@ import pickle
 import logging
 import uvicorn
 import os
+import csv
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -29,8 +30,10 @@ app = FastAPI(
 # Global Model Variable
 # --------------------------------------------------
 model = None
+iris_rows = []
 BASE_DIR = Path(__file__).resolve().parent
 INDEX_FILE = BASE_DIR / "templates" / "index.html"
+DATA_FILE = BASE_DIR / "IRIS.csv"
 DEFAULT_API_KEY = os.getenv("API_KEY", "Ansh")
 
 # --------------------------------------------------
@@ -89,12 +92,63 @@ def run_prediction(features: List[float]):
             detail="Internal server error during prediction."
         )
 
+
+def format_species_name(value: str) -> str:
+    return value.strip().capitalize()
+
+
+def label_prediction(value):
+    mapping = {
+        0: "Setosa",
+        1: "Versicolor",
+        2: "Virginica",
+        "0": "Setosa",
+        "1": "Versicolor",
+        "2": "Virginica"
+    }
+    return mapping.get(value, format_species_name(str(value)))
+
+
+def build_test_data_payload(limit: int = 12):
+    if not iris_rows:
+        return {
+            "summary": [],
+            "rows": []
+        }
+
+    species_counts = {}
+    preview_rows = []
+
+    for row in iris_rows:
+        species = row["species"]
+        species_counts[species] = species_counts.get(species, 0) + 1
+
+    for row in iris_rows[:limit]:
+        features = row["features"]
+        predicted_value = run_prediction(features)["prediction"][0]
+        preview_rows.append(
+            {
+                "id": row["id"],
+                "features": features,
+                "actual_species": row["species"],
+                "predicted_species": label_prediction(predicted_value)
+            }
+        )
+
+    return {
+        "summary": [
+            {"species": species, "count": count}
+            for species, count in species_counts.items()
+        ],
+        "rows": preview_rows
+    }
+
 # --------------------------------------------------
 # Startup Event – Load Model
 # --------------------------------------------------
 @app.on_event("startup")
 def load_model():
-    global model
+    global model, iris_rows
     try:
         with open("model.pkl", "rb") as file:
             model = pickle.load(file)
@@ -102,11 +156,28 @@ def load_model():
         if not hasattr(model, "predict"):
             raise AttributeError("Loaded object does not have a predict() method")
 
+        with open(DATA_FILE, newline="", encoding="utf-8") as csv_file:
+            reader = csv.DictReader(csv_file)
+            iris_rows = [
+                {
+                    "id": int(row["ID"]),
+                    "features": [
+                        float(row["Sepal.Length"]),
+                        float(row["Sepal.Width"]),
+                        float(row["Petal.Length"]),
+                        float(row["Petal.Width"])
+                    ],
+                    "species": format_species_name(row["Species"])
+                }
+                for row in reader
+            ]
+
         logging.info("Model loaded successfully.")
 
     except FileNotFoundError:
-        logging.error("model.pkl not found. Please place the model file in the root directory.")
+        logging.error("model.pkl or IRIS.csv not found. Please place the required files in the root directory.")
         model = None
+        iris_rows = []
 
     except pickle.UnpicklingError:
         logging.error("Error while unpickling the model file. The file may be corrupted.")
@@ -119,6 +190,7 @@ def load_model():
     except Exception as e:
         logging.error(f"Unexpected error while loading model: {e}")
         model = None
+        iris_rows = []
 
 
 # --------------------------------------------------
@@ -155,6 +227,11 @@ def health():
             "model_loaded": model is not None
         }
     )
+
+
+@app.get("/test-data")
+def test_data():
+    return JSONResponse(build_test_data_payload())
 
 
 # --------------------------------------------------

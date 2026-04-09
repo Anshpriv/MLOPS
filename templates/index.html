@@ -3,21 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iris Bloom Classifier</title>
+  <title>Iris Prediction Studio</title>
   <style>
     :root {
-      --sand: #f5efe5;
-      --mist: #e3efe3;
-      --leaf: #2d6a4f;
-      --leaf-deep: #1f4d39;
-      --rose: #d98a7c;
-      --sun: #f0c979;
-      --card: rgba(255, 252, 246, 0.9);
-      --text: #1e2a24;
-      --muted: #64746a;
-      --line: rgba(45, 106, 79, 0.14);
-      --shadow: 0 30px 80px rgba(37, 53, 44, 0.14);
-      --error: #b24a4a;
+      --cream: #f7f0e6;
+      --sage: #dbe9dc;
+      --forest: #2f6b4f;
+      --forest-deep: #1f4b38;
+      --gold: #efcb7f;
+      --coral: #d98f80;
+      --ink: #1f2b24;
+      --muted: #66756d;
+      --line: rgba(47, 107, 79, 0.14);
+      --panel: rgba(255, 252, 247, 0.9);
+      --shadow: 0 24px 80px rgba(31, 48, 38, 0.14);
+      --error: #b64b4b;
+      --setosa: #9fd9a4;
+      --versicolor: #f2cb78;
+      --virginica: #e1a099;
     }
 
     * {
@@ -28,25 +31,30 @@
       margin: 0;
       min-height: 100vh;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      color: var(--text);
+      color: var(--ink);
       background:
-        radial-gradient(circle at top left, rgba(255,255,255,0.92), transparent 30%),
-        radial-gradient(circle at bottom right, rgba(217,138,124,0.18), transparent 28%),
-        linear-gradient(135deg, var(--sand) 0%, #faf7f2 45%, var(--mist) 100%);
+        radial-gradient(circle at top left, rgba(255,255,255,0.96), transparent 28%),
+        radial-gradient(circle at top right, rgba(239,203,127,0.24), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(217,143,128,0.16), transparent 24%),
+        linear-gradient(135deg, var(--cream) 0%, #fbf8f3 48%, var(--sage) 100%);
       padding: 24px;
     }
 
-    .page {
-      width: min(1160px, 100%);
+    .app {
+      width: min(1280px, 100%);
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
       gap: 24px;
-      align-items: stretch;
+    }
+
+    .top {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 24px;
     }
 
     .panel {
-      background: var(--card);
+      background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 30px;
       box-shadow: var(--shadow);
@@ -56,11 +64,11 @@
 
     .hero {
       position: relative;
-      padding: 42px;
+      padding: 40px;
+      min-height: 650px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 680px;
     }
 
     .hero::before,
@@ -72,112 +80,112 @@
     }
 
     .hero::before {
-      top: -70px;
-      right: -40px;
-      width: 220px;
-      height: 220px;
-      background: radial-gradient(circle, rgba(240, 201, 121, 0.35), transparent 70%);
+      top: -90px;
+      right: -50px;
+      width: 240px;
+      height: 240px;
+      background: radial-gradient(circle, rgba(239,203,127,0.34), transparent 72%);
     }
 
     .hero::after {
-      bottom: -90px;
-      left: -30px;
-      width: 260px;
-      height: 260px;
-      background: radial-gradient(circle, rgba(45, 106, 79, 0.18), transparent 72%);
+      bottom: -110px;
+      left: -45px;
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, rgba(47,107,79,0.18), transparent 72%);
     }
 
     .badge {
       display: inline-flex;
-      align-items: center;
-      gap: 8px;
       width: fit-content;
       padding: 9px 16px;
       border-radius: 999px;
-      background: rgba(45, 106, 79, 0.08);
-      color: var(--leaf-deep);
+      background: rgba(47, 107, 79, 0.08);
+      color: var(--forest-deep);
       font-size: 0.82rem;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
     }
 
     h1 {
-      margin: 18px 0 16px;
+      margin: 18px 0 14px;
       max-width: 10ch;
-      font-size: clamp(2.8rem, 5vw, 5rem);
-      line-height: 0.96;
-      letter-spacing: -0.05em;
+      font-size: clamp(2.8rem, 5vw, 5.2rem);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
     }
 
     .lead {
-      max-width: 34rem;
+      max-width: 35rem;
       margin: 0;
       color: var(--muted);
       font-size: 1.02rem;
       line-height: 1.8;
     }
 
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-top: 34px;
+    .chips,
+    .species-cards {
       position: relative;
       z-index: 1;
     }
 
-    .stat {
+    .species-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .species-card {
       padding: 18px;
       border-radius: 22px;
       border: 1px solid rgba(0,0,0,0.04);
     }
 
-    .stat strong {
+    .species-card strong {
       display: block;
       margin-bottom: 8px;
       font-size: 1rem;
     }
 
-    .stat span {
-      color: rgba(30, 42, 36, 0.76);
+    .species-card span {
+      color: rgba(31,43,36,0.76);
       line-height: 1.5;
       font-size: 0.92rem;
     }
 
-    .setosa { background: linear-gradient(180deg, rgba(165, 214, 167, 0.84), rgba(165, 214, 167, 0.46)); }
-    .versicolor { background: linear-gradient(180deg, rgba(240, 201, 121, 0.84), rgba(240, 201, 121, 0.46)); }
-    .virginica { background: linear-gradient(180deg, rgba(217, 138, 124, 0.82), rgba(217, 138, 124, 0.42)); }
+    .setosa-bg { background: linear-gradient(180deg, rgba(159,217,164,0.85), rgba(159,217,164,0.48)); }
+    .versicolor-bg { background: linear-gradient(180deg, rgba(242,203,120,0.85), rgba(242,203,120,0.48)); }
+    .virginica-bg { background: linear-gradient(180deg, rgba(225,160,153,0.85), rgba(225,160,153,0.46)); }
 
-    .examples {
-      margin-top: 28px;
+    .chips {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      position: relative;
-      z-index: 1;
+      margin-top: 26px;
     }
 
-    .pill {
+    .chip {
       border: 0;
-      padding: 11px 14px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.76);
-      color: var(--leaf-deep);
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.8);
+      color: var(--forest-deep);
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 10px 24px rgba(31, 77, 57, 0.08);
+      box-shadow: 0 10px 22px rgba(31,77,57,0.08);
     }
 
     .predictor {
       padding: 34px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+      display: grid;
+      gap: 16px;
+      align-content: center;
     }
 
     .eyebrow {
-      color: var(--leaf);
+      color: var(--forest);
       font-size: 0.84rem;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -185,26 +193,22 @@
     }
 
     .title {
-      margin: 10px 0 8px;
-      font-size: 1.75rem;
-      letter-spacing: -0.04em;
+      margin: 0;
+      font-size: 1.8rem;
+      letter-spacing: -0.05em;
     }
 
     .subtitle {
-      margin: 0 0 22px;
+      margin: 0;
       color: var(--muted);
       line-height: 1.7;
-    }
-
-    form {
-      display: grid;
-      gap: 16px;
     }
 
     .grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 14px;
+      margin-top: 6px;
     }
 
     .field {
@@ -213,8 +217,8 @@
     }
 
     label {
-      font-weight: 600;
       font-size: 0.94rem;
+      font-weight: 700;
     }
 
     small {
@@ -224,51 +228,59 @@
 
     input {
       width: 100%;
-      border: 1px solid rgba(45, 106, 79, 0.18);
+      border: 1px solid rgba(47,107,79,0.18);
       border-radius: 18px;
       padding: 14px 16px;
       font-size: 1rem;
-      background: rgba(255, 255, 255, 0.88);
-      color: var(--text);
+      color: var(--ink);
+      background: rgba(255,255,255,0.88);
       outline: none;
       transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
     }
 
     input:focus {
-      border-color: rgba(45, 106, 79, 0.42);
-      box-shadow: 0 0 0 5px rgba(45, 106, 79, 0.09);
+      border-color: rgba(47,107,79,0.42);
+      box-shadow: 0 0 0 5px rgba(47,107,79,0.10);
       transform: translateY(-1px);
     }
 
-    .submit {
-      margin-top: 6px;
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .button,
+    .ghost {
       border: 0;
-      border-radius: 20px;
-      padding: 16px 18px;
-      background: linear-gradient(135deg, var(--leaf) 0%, #3d8161 100%);
-      color: white;
+      border-radius: 18px;
+      padding: 15px 18px;
       font-size: 1rem;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 18px 34px rgba(45, 106, 79, 0.24);
-      transition: transform 180ms ease, filter 180ms ease;
     }
 
-    .submit:hover {
-      transform: translateY(-2px);
-      filter: saturate(1.04);
+    .button {
+      flex: 1;
+      background: linear-gradient(135deg, var(--forest) 0%, #3d8161 100%);
+      color: white;
+      box-shadow: 0 18px 34px rgba(47,107,79,0.24);
+    }
+
+    .ghost {
+      background: rgba(47,107,79,0.08);
+      color: var(--forest-deep);
     }
 
     .result {
-      margin-top: 22px;
+      margin-top: 6px;
       padding: 22px;
       border-radius: 24px;
-      background: linear-gradient(180deg, rgba(45, 106, 79, 0.08), rgba(45, 106, 79, 0.03));
-      border: 1px solid rgba(45, 106, 79, 0.12);
-      min-height: 158px;
+      background: linear-gradient(180deg, rgba(47,107,79,0.08), rgba(47,107,79,0.03));
+      border: 1px solid rgba(47,107,79,0.12);
       display: grid;
       gap: 8px;
-      align-content: center;
+      min-height: 165px;
     }
 
     .result-label {
@@ -280,141 +292,370 @@
     }
 
     .result-value {
-      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-size: clamp(1.9rem, 3vw, 2.7rem);
       font-weight: 800;
       letter-spacing: -0.05em;
     }
 
-    .result-copy {
+    .result-copy,
+    .live-note {
       color: var(--muted);
       line-height: 1.6;
+    }
+
+    .live-note {
+      font-size: 0.9rem;
     }
 
     .error {
       color: var(--error);
     }
 
-    .note {
-      margin-top: 16px;
+    .dashboard {
+      padding: 30px;
+      display: grid;
+      gap: 22px;
+    }
+
+    .dashboard-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+
+    .dashboard-head h2 {
+      margin: 6px 0 0;
+      font-size: 1.7rem;
+      letter-spacing: -0.04em;
+    }
+
+    .dashboard-head p {
+      margin: 6px 0 0;
       color: var(--muted);
-      font-size: 0.88rem;
       line-height: 1.6;
     }
 
-    @media (max-width: 960px) {
-      .page {
+    .mini-badge {
+      display: inline-flex;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(47,107,79,0.08);
+      color: var(--forest-deep);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .summary-card {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.66);
+      border: 1px solid var(--line);
+    }
+
+    .summary-card .name {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .summary-card .count {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      margin-bottom: 12px;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(47,107,79,0.10);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 18px;
+    }
+
+    .chart-card,
+    .table-card {
+      padding: 20px;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.66);
+      border: 1px solid var(--line);
+    }
+
+    .chart-card h3,
+    .table-card h3 {
+      margin: 0 0 6px;
+      font-size: 1.1rem;
+    }
+
+    .card-copy {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.92rem;
+    }
+
+    .bars {
+      display: grid;
+      gap: 14px;
+    }
+
+    .bar-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid rgba(47,107,79,0.10);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+      background: rgba(255,255,255,0.76);
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(47,107,79,0.08);
+      font-size: 0.92rem;
+    }
+
+    th {
+      background: rgba(47,107,79,0.06);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .tag.setosa { background: rgba(159,217,164,0.38); color: #255135; }
+    .tag.versicolor { background: rgba(242,203,120,0.38); color: #6d4e11; }
+    .tag.virginica { background: rgba(225,160,153,0.34); color: #70352f; }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1024px) {
+      .top,
+      .data-grid {
         grid-template-columns: 1fr;
       }
 
-      .hero,
-      .predictor {
+      .hero {
         min-height: auto;
-        padding: 28px;
       }
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 720px) {
       body {
         padding: 14px;
       }
 
       .grid,
-      .stats {
+      .species-cards,
+      .summary-grid {
         grid-template-columns: 1fr;
+      }
+
+      .hero,
+      .predictor,
+      .dashboard {
+        padding: 24px;
       }
 
       h1 {
         max-width: none;
       }
+
+      .actions {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="page">
-    <section class="panel hero">
-      <div>
-        <span class="badge">Iris ML Predictor</span>
-        <h1>See which iris species the model picks.</h1>
-        <p class="lead">
-          This demo uses the classic iris dataset and predicts flower species from four measurements. No password is needed in the page now. Just enter the values and get the result instantly.
-        </p>
-      </div>
-
-      <div>
-        <div class="stats">
-          <article class="stat setosa">
-            <strong>Setosa</strong>
-            <span>Small petals, very distinctive structure, usually the easiest class to separate.</span>
-          </article>
-          <article class="stat versicolor">
-            <strong>Versicolor</strong>
-            <span>Middle-range petal sizes with balanced measurements across all four inputs.</span>
-          </article>
-          <article class="stat virginica">
-            <strong>Virginica</strong>
-            <span>Larger petals and stronger overall dimensions compared with the other species.</span>
-          </article>
+  <main class="app">
+    <section class="top">
+      <section class="panel hero">
+        <div>
+          <span class="badge">Iris ML Predictor</span>
+          <h1>Explore predictions with live inputs and test data.</h1>
+          <p class="lead">
+            This frontend now covers both experiments: it predicts from real-time user input and also visualizes sample test data using charts, summary cards, and a prediction table connected to the API.
+          </p>
         </div>
 
-        <div class="examples">
-          <button class="pill" type="button" data-values="5.1,3.5,1.4,0.2">Use Setosa sample</button>
-          <button class="pill" type="button" data-values="6.0,2.9,4.5,1.5">Use Versicolor sample</button>
-          <button class="pill" type="button" data-values="6.9,3.1,5.4,2.1">Use Virginica sample</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel predictor">
-      <div class="eyebrow">Simple Form</div>
-      <h2 class="title">Run a prediction</h2>
-      <p class="subtitle">Fill in the flower measurements in centimeters. The frontend is connected directly to the backend through the browser-friendly prediction route.</p>
-
-      <form id="predict-form">
-        <div class="grid">
-          <div class="field">
-            <label for="sepal_length">Sepal length</label>
-            <input id="sepal_length" type="number" min="0" step="0.1" value="5.1" required>
-            <small>Example: 5.1 cm</small>
+        <div>
+          <div class="species-cards">
+            <article class="species-card setosa-bg">
+              <strong>Setosa</strong>
+              <span>Compact petals and easy-to-separate structure make this one visually distinctive.</span>
+            </article>
+            <article class="species-card versicolor-bg">
+              <strong>Versicolor</strong>
+              <span>Balanced measurements and moderate petal sizes place it in the middle region.</span>
+            </article>
+            <article class="species-card virginica-bg">
+              <strong>Virginica</strong>
+              <span>Larger petal values tend to push predictions toward the Virginica class.</span>
+            </article>
           </div>
 
-          <div class="field">
-            <label for="sepal_width">Sepal width</label>
-            <input id="sepal_width" type="number" min="0" step="0.1" value="3.5" required>
-            <small>Example: 3.5 cm</small>
-          </div>
-
-          <div class="field">
-            <label for="petal_length">Petal length</label>
-            <input id="petal_length" type="number" min="0" step="0.1" value="1.4" required>
-            <small>Example: 1.4 cm</small>
-          </div>
-
-          <div class="field">
-            <label for="petal_width">Petal width</label>
-            <input id="petal_width" type="number" min="0" step="0.1" value="0.2" required>
-            <small>Example: 0.2 cm</small>
+          <div class="chips">
+            <button class="chip" type="button" data-values="5.1,3.5,1.4,0.2">Load Setosa sample</button>
+            <button class="chip" type="button" data-values="6.0,2.9,4.5,1.5">Load Versicolor sample</button>
+            <button class="chip" type="button" data-values="6.9,3.1,5.4,2.1">Load Virginica sample</button>
           </div>
         </div>
-
-        <button class="submit" type="submit">Predict Species</button>
-      </form>
-
-      <section class="result" id="result">
-        <div class="result-label">Prediction</div>
-        <div class="result-value">Waiting for your input</div>
-        <div class="result-copy">Choose sample values or enter your own measurements to classify the flower.</div>
       </section>
 
-      <p class="note">If the page ever shows <code>{"detail":"Not Found"}</code>, the server you are running does not include the new <code>/</code> route yet. Restart the app after saving the latest code.</p>
+      <section class="panel predictor">
+        <div class="eyebrow">Real-Time Form</div>
+        <h2 class="title">Live prediction form</h2>
+        <p class="subtitle">Type values below and the result updates automatically after a short pause. You can still use the button if you want an explicit API call too.</p>
+
+        <form id="predict-form">
+          <div class="grid">
+            <div class="field">
+              <label for="sepal_length">Sepal length</label>
+              <input id="sepal_length" type="number" min="0" step="0.1" value="5.1" required>
+              <small>Example: 5.1 cm</small>
+            </div>
+
+            <div class="field">
+              <label for="sepal_width">Sepal width</label>
+              <input id="sepal_width" type="number" min="0" step="0.1" value="3.5" required>
+              <small>Example: 3.5 cm</small>
+            </div>
+
+            <div class="field">
+              <label for="petal_length">Petal length</label>
+              <input id="petal_length" type="number" min="0" step="0.1" value="1.4" required>
+              <small>Example: 1.4 cm</small>
+            </div>
+
+            <div class="field">
+              <label for="petal_width">Petal width</label>
+              <input id="petal_width" type="number" min="0" step="0.1" value="0.2" required>
+              <small>Example: 0.2 cm</small>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="button" type="submit">Predict Now</button>
+            <button class="ghost" type="button" id="refresh-data">Refresh Test Data</button>
+          </div>
+        </form>
+
+        <section class="result" id="result">
+          <div class="result-label">Live Prediction</div>
+          <div class="result-value">Waiting for input</div>
+          <div class="result-copy">Start typing or use a sample to send values to the backend.</div>
+          <div class="live-note" id="live-note">Live mode is ready.</div>
+        </section>
+      </section>
+    </section>
+
+    <section class="panel dashboard">
+      <div class="dashboard-head">
+        <div>
+          <span class="mini-badge">Test Data View</span>
+          <h2>Charts and table from API-integrated test samples</h2>
+          <p>This section reads from the backend and shows a species distribution chart plus a table of actual vs predicted values for iris test rows.</p>
+        </div>
+      </div>
+
+      <div class="summary-grid" id="summary-grid"></div>
+
+      <div class="data-grid">
+        <section class="chart-card">
+          <h3>Species Distribution Chart</h3>
+          <p class="card-copy">Simple bar chart built from the test-data API so you can visualize how many examples appear for each species.</p>
+          <div class="bars" id="bars"></div>
+        </section>
+
+        <section class="table-card">
+          <h3>Prediction Table</h3>
+          <p class="card-copy">Preview rows from the test dataset with original measurements, actual species, and predicted species.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Sepal L</th>
+                  <th>Sepal W</th>
+                  <th>Petal L</th>
+                  <th>Petal W</th>
+                  <th>Actual</th>
+                  <th>Predicted</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <p class="footer-note">This page now satisfies both requirements: charts and tables from test data with API integration, plus a form that shows live prediction results while the user edits measurements.</p>
     </section>
   </main>
 
   <script>
     const form = document.getElementById("predict-form");
+    const refreshDataButton = document.getElementById("refresh-data");
     const result = document.getElementById("result");
     const resultValue = result.querySelector(".result-value");
     const resultCopy = result.querySelector(".result-copy");
-    const exampleButtons = document.querySelectorAll(".pill");
+    const liveNote = document.getElementById("live-note");
+    const chips = document.querySelectorAll(".chip");
+    const summaryGrid = document.getElementById("summary-grid");
+    const bars = document.getElementById("bars");
+    const tableBody = document.getElementById("table-body");
 
     const fields = {
       sepalLength: document.getElementById("sepal_length"),
@@ -429,6 +670,15 @@
       2: "Virginica"
     };
 
+    const speciesClassMap = {
+      Setosa: "setosa",
+      Versicolor: "versicolor",
+      Virginica: "virginica"
+    };
+
+    let liveTimer = null;
+    let latestRequestId = 0;
+
     function setResult(title, copy, isError = false) {
       resultValue.textContent = title;
       resultCopy.textContent = copy;
@@ -436,27 +686,38 @@
       resultCopy.classList.toggle("error", isError);
     }
 
-    exampleButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const [sl, sw, pl, pw] = button.dataset.values.split(",");
-        fields.sepalLength.value = sl;
-        fields.sepalWidth.value = sw;
-        fields.petalLength.value = pl;
-        fields.petalWidth.value = pw;
-      });
-    });
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const features = [
+    function getFeatures() {
+      return [
         Number(fields.sepalLength.value),
         Number(fields.sepalWidth.value),
         Number(fields.petalLength.value),
         Number(fields.petalWidth.value)
       ];
+    }
 
-      setResult("Predicting...", "Sending your four iris measurements to the backend.");
+    function inputsAreValid() {
+      return Object.values(fields).every((input) => input.value !== "" && !Number.isNaN(Number(input.value)));
+    }
+
+    function labelPrediction(value) {
+      return speciesMap[value] || speciesMap[String(value)] || String(value);
+    }
+
+    async function requestPrediction(reason = "manual") {
+      if (!inputsAreValid()) {
+        setResult("Waiting for input", "Please fill all four numeric measurements to get a prediction.", true);
+        liveNote.textContent = "Live mode is paused until all fields are filled.";
+        return;
+      }
+
+      const requestId = ++latestRequestId;
+      const features = getFeatures();
+
+      liveNote.textContent = reason === "live"
+        ? "Live prediction is updating from your latest input."
+        : "Sending a direct API request from the form.";
+
+      setResult("Predicting...", "Calling the backend with the current measurement values.");
 
       try {
         const response = await fetch("/predict-ui", {
@@ -469,18 +730,145 @@
 
         const data = await response.json();
 
+        if (requestId !== latestRequestId) {
+          return;
+        }
+
         if (!response.ok) {
           throw new Error(data.detail || "Prediction failed.");
         }
 
         const rawPrediction = Array.isArray(data.prediction) ? data.prediction[0] : data.prediction;
-        const prediction = speciesMap[rawPrediction] || String(rawPrediction);
+        const prediction = labelPrediction(rawPrediction);
 
-        setResult(prediction, "The backend successfully classified this iris from the values in the form.");
+        setResult(prediction, "The backend classified this iris using the current form values.");
+        liveNote.textContent = reason === "live"
+          ? "Live result updated automatically."
+          : "Manual prediction completed successfully.";
       } catch (error) {
+        if (requestId !== latestRequestId) {
+          return;
+        }
+
         setResult("Request failed", error.message, true);
+        liveNote.textContent = "The API request failed. Check the backend and try again.";
       }
+    }
+
+    function scheduleLivePrediction() {
+      window.clearTimeout(liveTimer);
+      liveTimer = window.setTimeout(() => {
+        requestPrediction("live");
+      }, 350);
+    }
+
+    function renderSummary(summary) {
+      const total = summary.reduce((sum, item) => sum + item.count, 0) || 1;
+
+      summaryGrid.innerHTML = summary.map((item) => {
+        const speciesClass = speciesClassMap[item.species] || "setosa";
+        const percentage = (item.count / total) * 100;
+
+        return `
+          <article class="summary-card">
+            <div class="name">${item.species}</div>
+            <div class="count">${item.count}</div>
+            <div class="bar-track">
+              <div class="bar-fill ${speciesClass}" style="width:${percentage}%; background:${speciesClass === "setosa" ? "var(--setosa)" : speciesClass === "versicolor" ? "var(--versicolor)" : "var(--virginica)"};"></div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderBars(summary) {
+      const maxCount = Math.max(...summary.map((item) => item.count), 1);
+
+      bars.innerHTML = summary.map((item) => {
+        const width = (item.count / maxCount) * 100;
+        const speciesClass = speciesClassMap[item.species] || "setosa";
+        const color = speciesClass === "setosa"
+          ? "var(--setosa)"
+          : speciesClass === "versicolor"
+            ? "var(--versicolor)"
+            : "var(--virginica)";
+
+        return `
+          <div class="bar-row">
+            <div class="bar-top">
+              <span>${item.species}</span>
+              <span>${item.count} rows</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${width}%; background:${color};"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderTable(rows) {
+      tableBody.innerHTML = rows.map((row) => {
+        const actualClass = speciesClassMap[row.actual_species] || "setosa";
+        const predictedClass = speciesClassMap[row.predicted_species] || "setosa";
+
+        return `
+          <tr>
+            <td>${row.id}</td>
+            <td>${row.features[0]}</td>
+            <td>${row.features[1]}</td>
+            <td>${row.features[2]}</td>
+            <td>${row.features[3]}</td>
+            <td><span class="tag ${actualClass}">${row.actual_species}</span></td>
+            <td><span class="tag ${predictedClass}">${row.predicted_species}</span></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function loadTestData() {
+      try {
+        const response = await fetch("/test-data");
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Unable to load test data.");
+        }
+
+        renderSummary(data.summary || []);
+        renderBars(data.summary || []);
+        renderTable(data.rows || []);
+      } catch (error) {
+        summaryGrid.innerHTML = "<article class=\"summary-card\">Failed to load summary data.</article>";
+        bars.innerHTML = `<div class="footer-note error">${error.message}</div>`;
+        tableBody.innerHTML = `<tr><td colspan="7" class="error">${error.message}</td></tr>`;
+      }
+    }
+
+    chips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const [sl, sw, pl, pw] = chip.dataset.values.split(",");
+        fields.sepalLength.value = sl;
+        fields.sepalWidth.value = sw;
+        fields.petalLength.value = pl;
+        fields.petalWidth.value = pw;
+        scheduleLivePrediction();
+      });
     });
+
+    Object.values(fields).forEach((input) => {
+      input.addEventListener("input", scheduleLivePrediction);
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      requestPrediction("manual");
+    });
+
+    refreshDataButton.addEventListener("click", loadTestData);
+
+    loadTestData();
+    requestPrediction("live");
   </script>
 </body>
 </html>
