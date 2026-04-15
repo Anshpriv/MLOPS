@@ -8,6 +8,8 @@ from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
 
 # --------------------------------------------------
 # Logging Configuration
@@ -34,6 +36,7 @@ iris_rows = []
 BASE_DIR = Path(__file__).resolve().parent
 INDEX_FILE = BASE_DIR / "templates" / "index.html"
 DATA_FILE = BASE_DIR / "IRIS.csv"
+MODEL_FILE = BASE_DIR / "model.pkl"
 DEFAULT_API_KEY = os.getenv("API_KEY", "Ansh")
 
 # --------------------------------------------------
@@ -109,6 +112,33 @@ def label_prediction(value):
     return mapping.get(value, format_species_name(str(value)))
 
 
+def train_model() -> object:
+    if not DATA_FILE.exists():
+        raise FileNotFoundError(f"Training data not found: {DATA_FILE}")
+
+    df = pd.read_csv(DATA_FILE)
+    expected_columns = {"Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", "Species"}
+    if not expected_columns.issubset(df.columns):
+        raise ValueError("IRIS.csv is missing required feature or label columns.")
+
+    df["Species"] = df["Species"].astype(str).str.strip().str.lower()
+    label_map = {"setosa": 0, "versicolor": 1, "virginica": 2}
+    if not set(df["Species"]).issubset(set(label_map)):
+        raise ValueError("IRIS.csv contains unknown species labels.")
+
+    X = df[["Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width"]].astype(float).values
+    y = df["Species"].map(label_map).astype(int).values
+
+    model_obj = RandomForestClassifier(n_estimators=100, random_state=42)
+    model_obj.fit(X, y)
+
+    with open(MODEL_FILE, "wb") as file:
+        pickle.dump(model_obj, file)
+
+    logging.info("Trained new model from IRIS.csv and saved to model.pkl")
+    return model_obj
+
+
 def build_test_data_payload(limit: int = 12):
     if not iris_rows:
         return {
@@ -150,11 +180,7 @@ def build_test_data_payload(limit: int = 12):
 def load_model():
     global model, iris_rows
     try:
-        with open("model.pkl", "rb") as file:
-            model = pickle.load(file)
-
-        if not hasattr(model, "predict"):
-            raise AttributeError("Loaded object does not have a predict() method")
+        model = train_model()
 
         with open(DATA_FILE, newline="", encoding="utf-8") as csv_file:
             reader = csv.DictReader(csv_file)
@@ -172,23 +198,15 @@ def load_model():
                 for row in reader
             ]
 
-        logging.info("Model loaded successfully.")
+        logging.info("Model trained and dataset loaded successfully.")
 
-    except FileNotFoundError:
-        logging.error("model.pkl or IRIS.csv not found. Please place the required files in the root directory.")
+    except FileNotFoundError as e:
+        logging.error(f"Required file not found: {e}")
         model = None
         iris_rows = []
 
-    except pickle.UnpicklingError:
-        logging.error("Error while unpickling the model file. The file may be corrupted.")
-        model = None
-
-    except AttributeError as e:
-        logging.error(f"Invalid model object: {e}")
-        model = None
-
     except Exception as e:
-        logging.error(f"Unexpected error while loading model: {e}")
+        logging.error(f"Unexpected error during startup: {e}")
         model = None
         iris_rows = []
 
