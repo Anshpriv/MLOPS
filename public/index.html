@@ -720,7 +720,7 @@
       setResult("Predicting...", "Calling the backend with the current measurement values.");
 
       try {
-        const response = await fetch("/api/predict-ui"), {
+        const response = await fetch("/api/predict-ui", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
