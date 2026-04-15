@@ -720,7 +720,7 @@
       setResult("Predicting...", "Calling the backend with the current measurement values.");
 
       try {
-        const response = await fetch("http://13.126.88.47:8000/predict-ui", {
+        const response = await fetch("http://35.154.75.90:8000/predict-ui", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -828,7 +828,7 @@
 
     async function loadTestData() {
       try {
-        const response = await fetch("http://13.126.88.47:8000/test-data");
+        const response = await fetch("http://35.154.75.90:8000/test-data");
         const data = await response.json();
 
         if (!response.ok) {
