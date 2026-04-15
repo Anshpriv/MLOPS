@@ -217,8 +217,8 @@ def load_model():
 class PredictionRequest(BaseModel):
     features: List[float] = Field(
         ...,
-        min_items=4,
-        max_items=4,
+        min_length=4,
+        max_length=4,
         description="List of four iris flower measurements"
     )
 
