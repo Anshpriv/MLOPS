@@ -7,7 +7,134 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optionalimport pickle
+import logging
+import uvicorn
+import os
+import csv
+from pathlib import Path
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from typing import List
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+
+# -----------------------------
+# Logging
+# -----------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+# -----------------------------
+# App Init
+# -----------------------------
+app = FastAPI()
+
+# -----------------------------
+# CORS (VERY IMPORTANT)
+# -----------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # allow Netlify
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# -----------------------------
+# Paths
+# -----------------------------
+BASE_DIR = Path(__file__).resolve().parent
+INDEX_FILE = BASE_DIR / "templates" / "index.html"
+DATA_FILE = BASE_DIR / "IRIS.csv"
+MODEL_FILE = BASE_DIR / "model.pkl"
+
+model = None
+iris_rows = []
+
+# -----------------------------
+# Train Model
+# -----------------------------
+def train_model():
+    df = pd.read_csv(DATA_FILE)
+
+    X = df[["Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width"]].values
+    y = df["Species"].astype("category").cat.codes
+
+    clf = RandomForestClassifier()
+    clf.fit(X, y)
+
+    with open(MODEL_FILE, "wb") as f:
+        pickle.dump(clf, f)
+
+    return clf
+
+# -----------------------------
+# Startup
+# -----------------------------
+@app.on_event("startup")
+def startup():
+    global model, iris_rows
+
+    try:
+        model = train_model()
+
+        with open(DATA_FILE, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            iris_rows = list(reader)
+
+        logging.info("Model + data loaded")
+
+    except Exception as e:
+        logging.error(f"Startup failed: {e}")
+        model = None
+
+# -----------------------------
+# Schema
+# -----------------------------
+class PredictionRequest(BaseModel):
+    features: List[float] = Field(..., min_length=4, max_length=4)
+
+# -----------------------------
+# Routes
+# -----------------------------
+@app.get("/", response_class=HTMLResponse)
+def home():
+    return HTMLResponse(INDEX_FILE.read_text())
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "model_loaded": model is not None
+    }
+
+@app.get("/test-data")
+def test_data():
+    return iris_rows[:10]
+
+@app.post("/predict-ui")
+def predict_ui(request: PredictionRequest):
+    if model is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
+
+    try:
+        prediction = model.predict([request.features])
+        return {
+            "prediction": int(prediction[0])
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# -----------------------------
+# Run
+# -----------------------------
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
